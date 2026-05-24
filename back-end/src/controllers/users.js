@@ -154,6 +154,11 @@ controller.login = async function(req, res) {
       // HTTP 401: Unauthorized
       if(! passwordIsValid) return res.status(401).end()
 
+          // Eliminamos o campo "password" dos dados do usuário antes de incluí-lo
+     // no payload do token JWT
+     if(user.password) delete user.password
+
+
       // Usuário e senha OK, passamos ao procedimento de gerar o token
       const token = jwt.sign(
         user,                       // Dados do usuário
@@ -161,18 +166,19 @@ controller.login = async function(req, res) {
         { expiresIn: '24h' }        // Prazo de validade do token
       )
 
-      // Formamos o cookie para enviar ao front-end
-      res.cookie(process.env.AUTH_COOKIE_NAME, token, {
-        httpOnly: true, // O cookie ficará inacessível para o JS no front-end
-        secure: true,   // O cookie será criptografado em conexões https
-        sameSite: 'None',
-        path: '/',
-        maxAge: 24 * 60 * 60 * 100  // 24h
-      })
+         // Formamos o cookie para enviar ao front-end
+     res.cookie(process.env.AUTH_COOKIE_NAME, token, {
+       httpOnly: true, // O cookie ficará inacessível para o JS no front-end
+       secure: true,   // O cookie será criptografado em conexões https
+       sameSite: 'None',
+       path: '/',
+       maxAge: 24 * 60 * 60 * 100  // 24h
+     })
+
 
       // Retorna o token e o usuário autenticado com
       // HTTP 200: OK (implícito)
-      res.send({token, user})
+      res.send({user})
 
   }
   catch(error) {
@@ -187,6 +193,16 @@ controller.me = function(req, res) {
   // Retorna as informações do usuário autenticado
   // HTTP 200: OK (implícito)
   res.send(req?.authUser)
+}
+controller.logout = function(req, res) {
+ // Apaga no front-end o cookie que armazena o token de autorização
+ res.clearCookie(process.env.AUTH_COOKIE_NAME, {
+   path: '/',
+   secure: true,
+   sameSite: 'None'
+ })
+ // HTTP 204: No Content
+ res.status(204).end()
 }
 
 export default controller
